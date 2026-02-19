@@ -1,0 +1,20 @@
+# Discover all models in a package/directory
+orm: sqlmodel
+async_mode: false
+commit_strategy: none
+
+output_dir: app/repositories
+
+generation:
+  mode: combined
+  base_filename: base_repository.py
+  base_class_name: BaseRepository
+
+# Enable discovery with defaults via a wildcard-like entry
+models: all
+models_dir: app/models
+models_package: app.models
+
+# Optional: if imports may fail during early scaffolding
+allow_missing_models: true
+

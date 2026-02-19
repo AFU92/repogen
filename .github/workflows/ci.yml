@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    # Run on PRs always. On push to main, run only if it's not a PR merge commit
+    if: >-
+      ${{ github.event_name == 'pull_request' ||
+          (github.event_name == 'push' &&
+           !contains(github.event.head_commit.message, 'Merge pull request') &&
+           !contains(github.event.head_commit.message, ' (#')) }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv (with cache)
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-python: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Python via uv
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Check lockfile is up-to-date
+        run: uv lock --check
+
+      - name: Sync dependencies (all groups) from lock
+        run: uv sync --frozen --all-groups --python ${{ matrix.python-version }}
+
+      - name: Ruff format (check)
+        run: uv run --frozen ruff format . --check
+
+      - name: Ruff lint
+        run: uv run --frozen ruff check . --output-format=github
+
+      - name: Type check (mypy)
+        run: uv run --frozen mypy src tests
+
+      - name: Run tests (pytest)
+        run: uv run --frozen pytest -q
+
+  build:
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv (with cache)
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-python: true
+          python-version: "3.12"
+
+      - name: Install Python via uv
+        run: uv python install 3.12
+
+      - name: Check lockfile is up-to-date
+        run: uv lock --check
+
+      - name: Sync dependencies (all groups) from lock
+        run: uv sync --frozen --all-groups --python 3.12
+
+      - name: Build package (sdist + wheel)
+        run: uv build
+
+      - name: Verify wheel contains templates/assets
+        run: |
+          uv run --frozen python - <<'PY'
+          import zipfile, pathlib, sys
+          whls = sorted(pathlib.Path("dist").glob("*.whl"))
+          if not whls:
+              print("No wheel in dist/", file=sys.stderr)
+              sys.exit(1)
+          with zipfile.ZipFile(whls[-1]) as z:
+              names = set(z.namelist())
+              required = [
+                  "genrepo/templates/repository_sqlmodel.j2",
+                  "genrepo/templates/repository_sqlalchemy.j2",
+                  "genrepo/templates/base_repository_sqlmodel_sync.j2",
+                  "genrepo/templates/base_repository_sqlmodel_async.j2",
+                  "genrepo/templates/base_repository_sqlalchemy_sync.j2",
+                  "genrepo/templates/base_repository_sqlalchemy_async.j2",
+                  "genrepo/templates/model_repository_user_stub.j2",
+                  "genrepo/templates/repository_base_stub.j2",
+                  "genrepo/templates/repository_standalone_stub.j2",
+                  "genrepo/assets/genrepo.sample.yaml",
+              ]
+              missing = [p for p in required if p not in names]
+              if missing:
+                  print(f"Missing in wheel: {missing}", file=sys.stderr)
+                  sys.exit(1)
+          print("Wheel contains required templates/assets: OK")
+          PY

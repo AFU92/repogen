@@ -1,0 +1,42 @@
+"""User repository (Combined mode).
+
+This file is created once and never overwritten. Extend with custom logic.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Optional
+
+{% if orm == 'sqlmodel' and not is_async %}
+from sqlmodel import Session
+{% elif orm == 'sqlmodel' and is_async %}
+from sqlmodel.ext.asyncio.session import AsyncSession as Session
+{% elif orm == 'sqlalchemy' and not is_async %}
+from sqlalchemy.orm import Session
+{% else %}
+from sqlalchemy.ext.asyncio import AsyncSession as Session
+{% endif %}
+
+from {{ model_module }} import {{ model_class }}
+from .{{ base_module }} import {{ base_class_name }}
+
+
+class {{ model_name }}Repository({{ base_class_name }}[{{ model_class }}]):
+    """Repository for {{ model_class }}; extend with project-specific queries."""
+
+    def __init__(self) -> None:
+        super().__init__({{ model_class }}, "{{ id_field }}")
+{% if personalize_methods %}
+
+    # Below are TODO stubs requested in config; remove or implement.
+{% for m in personalize_methods %}
+    def {{ m }}(self, session: Session, *args, **kwargs):
+        """TODO: implement custom method '{{ m }}'."""
+        pass
+
+{% endfor %}
+{% else %}
+
+    # TODO: add custom methods here (e.g., find_by_email)
+    pass
+{% endif %}

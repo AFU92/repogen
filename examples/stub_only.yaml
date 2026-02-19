@@ -1,0 +1,20 @@
+# Stub-only generation (no ORM imports; signatures + TODO/pass bodies)
+orm: sqlmodel  # ignored when stub_only=true
+async_mode: false
+commit_strategy: none
+
+output_dir: app/repositories
+
+generation:
+  mode: standalone   # or base/combined
+  stub_only: true
+
+allow_missing_models: true
+
+models:
+  - name: Report
+    import_path: app.models.report:Report
+    id_field: id
+    id_type: int
+    methods: [get, list, create]
+

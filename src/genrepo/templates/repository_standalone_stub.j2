@@ -1,0 +1,88 @@
+"""Repository (stub-only) for {{ model_class }}.
+
+Generated with stub-only mode: method signatures only, no ORM logic.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Optional
+
+from {{ model_module }} import {{ model_class }}
+
+
+class {{ model_name }}Repository:
+    """Repository for {{ model_class }} (stub-only)."""
+
+    class NotFoundError(Exception):
+        """Raised when an entity is not found."""
+
+{% if 'get' in methods %}
+    def get(self, session: Any, id: {{ id_type }}) -> Optional[{{ model_class }}]:
+        """TODO: implement get by primary key."""
+        pass
+
+{% endif %}
+{% if 'get_or_raise' in methods %}
+    def get_or_raise(self, session: Any, id: {{ id_type }}) -> {{ model_class }}:
+        """TODO: implement get_or_raise by primary key."""
+        pass
+
+{% endif %}
+{% if 'list' in methods %}
+    def list(self, session: Any, *where, limit: int = 100, offset: int = 0) -> list[{{ model_class }}]:
+        """TODO: implement list with pagination and optional filters."""
+        pass
+
+{% endif %}
+{% if 'find_one' in methods %}
+    def find_one(self, session: Any, *where) -> Optional[{{ model_class }}]:
+        """TODO: implement find_one by filters."""
+        pass
+
+{% endif %}
+{% if 'create' in methods %}
+    def create(self, session: Any, obj_in: {{ model_class }}) -> {{ model_class }}:
+        """TODO: implement create."""
+        pass
+
+{% endif %}
+{% if 'update' in methods %}
+    def update(self, session: Any, db_obj: {{ model_class }}, obj_in: dict[str, Any]) -> {{ model_class }}:
+        """TODO: implement update (patch fields)."""
+        pass
+
+{% endif %}
+{% if 'delete' in methods %}
+    def delete(self, session: Any, db_obj: {{ model_class }}) -> None:
+        """TODO: implement delete by instance."""
+        pass
+
+{% endif %}
+{% if 'delete_by_id' in methods %}
+    def delete_by_id(self, session: Any, id: {{ id_type }}) -> bool:
+        """TODO: implement delete by primary key; return True if removed."""
+        pass
+
+{% endif %}
+{% if 'exists' in methods %}
+    def exists(self, session: Any, *where) -> bool:
+        """TODO: implement exists by filters."""
+        pass
+
+{% endif %}
+{% if 'count' in methods %}
+    def count(self, session: Any, *where) -> int:
+        """TODO: implement count of rows matching filters."""
+        pass
+
+{% endif %}
+{% if personalize_methods %}
+    # Custom repo-only stubs requested in config; remove or implement.
+{% for m in personalize_methods %}
+    def {{ m }}(self, session: Any, *args, **kwargs):
+        """TODO: implement custom method '{{ m }}'."""
+        pass
+
+{% endfor %}
+{% endif %}
+

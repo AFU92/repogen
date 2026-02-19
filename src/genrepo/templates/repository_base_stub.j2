@@ -1,0 +1,60 @@
+"""Base repository (stub-only).
+
+Generated with stub-only mode: method signatures only, no ORM logic.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Optional, Generic, TypeVar
+
+T = TypeVar("T")
+
+
+class {{ base_class_name }}(Generic[T]):
+    class NotFoundError(Exception):
+        """Raised when an entity is not found."""
+
+    def __init__(self, model: type[T], id_field: str) -> None:
+        self.model = model
+        self.id_field = id_field
+
+    def get(self, session: Any, id: Any) -> Optional[T]:
+        """TODO: implement get by primary key."""
+        pass
+
+    def get_or_raise(self, session: Any, id: Any) -> T:
+        """TODO: implement get_or_raise by primary key."""
+        pass
+
+    def list(self, session: Any, *where, limit: int = 100, offset: int = 0) -> list[T]:
+        """TODO: implement list with pagination and optional filters."""
+        pass
+
+    def find_one(self, session: Any, *where) -> Optional[T]:
+        """TODO: implement find_one by filters."""
+        pass
+
+    def create(self, session: Any, obj_in: T) -> T:
+        """TODO: implement create."""
+        pass
+
+    def update(self, session: Any, db_obj: T, obj_in: dict[str, Any]) -> T:
+        """TODO: implement update (patch fields)."""
+        pass
+
+    def delete(self, session: Any, db_obj: T) -> None:
+        """TODO: implement delete by instance."""
+        pass
+
+    def delete_by_id(self, session: Any, id: Any) -> bool:
+        """TODO: implement delete by primary key; return True if removed."""
+        pass
+
+    def exists(self, session: Any, *where) -> bool:
+        """TODO: implement exists by filters."""
+        pass
+
+    def count(self, session: Any, *where) -> int:
+        """TODO: implement count of rows matching filters."""
+        pass
+

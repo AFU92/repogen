@@ -1,0 +1,37 @@
+# Combined mode with multiple models (SQLAlchemy, sync)
+orm: sqlalchemy
+async_mode: false
+commit_strategy: flush
+
+output_dir: app/repositories
+
+generation:
+  mode: combined
+  base_filename: base_repository.py
+  base_class_name: BaseRepository
+  overwrite_base: true
+
+allow_missing_models: true
+
+models:
+  - name: Customer
+    import_path: app.models.customer:Customer
+    id_field: id
+    id_type: int
+    methods: [all]
+    personalize_methods: [preferred_status]
+
+  - name: Invoice
+    import_path: app.models.invoice:Invoice
+    id_field: id
+    id_type: int
+    methods: [get, list, create, delete_by_id, exists, count]
+    personalize_methods: [by_date_range]
+
+  - name: Item
+    import_path: app.models.item:Item
+    id_field: id
+    id_type: int
+    methods: [get, list]
+    personalize_methods: [by_sku]
+
