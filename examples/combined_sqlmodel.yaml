@@ -1,0 +1,23 @@
+# Combined mode (BaseRepository + user repos), SQLModel sync
+orm: sqlmodel
+async_mode: false
+commit_strategy: none
+
+output_dir: app/repositories
+
+generation:
+  mode: combined
+  base_filename: base_repository.py
+  base_class_name: BaseRepository
+  overwrite_base: true
+
+allow_missing_models: true
+
+models:
+  - name: User
+    import_path: app.models.user:User
+    id_field: id
+    id_type: int
+    # user repo will include a personalized stub to extend
+    personalize_methods: [calculate_age]
+

@@ -1,0 +1,20 @@
+orm: sqlmodel
+async_mode: false
+commit_strategy: none
+
+output_dir: app/repositories
+
+generation:
+  mode: combined
+  base_filename: base_repository.py
+  base_class_name: BaseRepository
+
+# Defaults for ALL models in the package (empty repos + custom stub)
+models:
+  - name: All
+    import_path: app.models
+    id_field: id
+    id_type: int
+    methods: [none]
+    personalize_methods: [calculate_something]
+

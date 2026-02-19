@@ -1,0 +1,37 @@
+# Combined mode with multiple models (SQLModel, async)
+orm: sqlmodel
+async_mode: true
+commit_strategy: none
+
+output_dir: app/repositories
+
+generation:
+  mode: combined
+  base_filename: base_repository.py
+  base_class_name: BaseRepository
+  overwrite_base: true
+
+allow_missing_models: true
+
+models:
+  - name: User
+    import_path: app.models.user:User
+    id_field: id
+    id_type: int
+    methods: [all]
+    personalize_methods: [calculate_age]
+
+  - name: Order
+    import_path: app.models.order:Order
+    id_field: id
+    id_type: str
+    methods: [get, list, create, delete_by_id, exists]
+    personalize_methods: [total_amount]
+
+  - name: Product
+    import_path: app.models.product:Product
+    id_field: id
+    id_type: int
+    methods: [get, list, find_one, count]
+    personalize_methods: [by_category]
+

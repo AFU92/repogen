@@ -1,0 +1,12 @@
+# Base-only (generate BaseRepository only)
+orm: sqlmodel
+async_mode: false
+commit_strategy: none
+
+output_dir: app/repositories
+
+generation:
+  mode: base
+  base_filename: base_repository.py
+  base_class_name: BaseRepository
+

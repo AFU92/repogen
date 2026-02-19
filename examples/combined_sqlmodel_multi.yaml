@@ -1,0 +1,42 @@
+# Combined mode with multiple models (SQLModel, sync)
+# Demonstrates per-model methods and personalized stubs.
+orm: sqlmodel
+async_mode: false
+commit_strategy: none
+
+output_dir: app/repositories
+
+generation:
+  mode: combined
+  base_filename: base_repository.py
+  base_class_name: BaseRepository
+  overwrite_base: true
+
+# Set to true if your models are not importable yet
+allow_missing_models: true
+
+models:
+  # Model 1: full CRUD via preset 'all', plus a custom domain method
+  - name: User
+    import_path: app.models.user:User
+    id_field: id
+    id_type: int
+    methods: [all]
+    personalize_methods: [calculate_age]
+
+  # Model 2: a subset of methods and a different id type (e.g., UUID as str)
+  - name: Order
+    import_path: app.models.order:Order
+    id_field: id
+    id_type: str
+    methods: [get, list, create, delete_by_id, exists]
+    personalize_methods: [total_amount]
+
+  # Model 3: read-mostly repository (no writes)
+  - name: Product
+    import_path: app.models.product:Product
+    id_field: id
+    id_type: int
+    methods: [get, list, find_one, count]
+    personalize_methods: [by_category]
+

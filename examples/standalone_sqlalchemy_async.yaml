@@ -1,0 +1,19 @@
+# Standalone repositories (SQLAlchemy, async)
+orm: sqlalchemy
+async_mode: true
+commit_strategy: flush  # or commit/none
+
+output_dir: app/repositories
+
+generation:
+  mode: standalone
+
+allow_missing_models: true
+
+models:
+  - name: Invoice
+    import_path: app.models.invoice:Invoice
+    id_field: id
+    id_type: int
+    methods: [all]
+

@@ -1,0 +1,95 @@
+"""Base repository (SQLModel async).
+
+Shared base repository with common CRUD operations for AsyncSession. You may customize.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Generic, Optional, TypeVar
+
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select
+from sqlalchemy import func
+
+T = TypeVar("T")
+
+
+class {{ base_class_name }}(Generic[T]):
+    class NotFoundError(Exception):
+        """Raised when an entity is not found."""
+
+    def __init__(self, model: type[T], id_field: str) -> None:
+        self.model = model
+        self.id_field = id_field
+
+    async def get(self, session: AsyncSession, id: Any) -> Optional[T]:
+        stmt = select(self.model).where(getattr(self.model, self.id_field) == id)
+        return (await session.exec(stmt)).first()
+
+    async def get_or_raise(self, session: AsyncSession, id: Any) -> T:
+        obj = await self.get(session, id)
+        if obj is None:
+            raise self.NotFoundError(f"{self.model.__name__} not found: {id}")
+        return obj
+
+    async def list(self, session: AsyncSession, *where, limit: int = 100, offset: int = 0) -> list[T]:
+        stmt = select(self.model)
+        if where:
+            stmt = stmt.where(*where)
+        stmt = stmt.offset(offset).limit(limit)
+        return list((await session.exec(stmt)).all())
+
+    async def find_one(self, session: AsyncSession, *where) -> Optional[T]:
+        stmt = select(self.model)
+        if where:
+            stmt = stmt.where(*where)
+        return (await session.exec(stmt)).first()
+
+    async def create(self, session: AsyncSession, obj_in: T) -> T:
+        session.add(obj_in)
+{% if commit_strategy == 'commit' %}
+        await session.commit()
+{% elif commit_strategy == 'flush' %}
+        await session.flush()
+{% endif %}
+        await session.refresh(obj_in)
+        return obj_in
+
+    async def update(self, session: AsyncSession, db_obj: T, obj_in: dict[str, Any]) -> T:
+        for k, v in obj_in.items():
+            setattr(db_obj, k, v)
+        session.add(db_obj)
+{% if commit_strategy == 'commit' %}
+        await session.commit()
+{% elif commit_strategy == 'flush' %}
+        await session.flush()
+{% endif %}
+        await session.refresh(db_obj)
+        return db_obj
+
+    async def delete(self, session: AsyncSession, db_obj: T) -> None:
+        session.delete(db_obj)
+{% if commit_strategy == 'commit' %}
+        await session.commit()
+{% elif commit_strategy == 'flush' %}
+        await session.flush()
+{% endif %}
+
+    async def delete_by_id(self, session: AsyncSession, id: Any) -> bool:
+        obj = await self.get(session, id)
+        if not obj:
+            return False
+        await self.delete(session, obj)
+        return True
+
+    async def exists(self, session: AsyncSession, *where) -> bool:
+        stmt = select(self.model)
+        if where:
+            stmt = stmt.where(*where)
+        return (await session.exec(stmt.limit(1))).first() is not None
+
+    async def count(self, session: AsyncSession, *where) -> int:
+        stmt = select(func.count()).select_from(self.model)
+        if where:
+            stmt = stmt.where(*where)
+        return int((await session.exec(stmt)).scalar_one())

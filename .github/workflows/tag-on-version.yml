@@ -1,0 +1,106 @@
+name: Tag on Version Bump
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  tag:
+    # Only run on direct pushes to main (avoid PR merge noise)
+    if: >-
+      ${{ github.event_name == 'push' &&
+          !contains(github.event.head_commit.message, 'Merge pull request') &&
+          !contains(github.event.head_commit.message, ' (#') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read current and previous version
+        id: ver
+        shell: bash
+        run: |
+          cur=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml | head -n1)
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            git show HEAD^:pyproject.toml > /tmp/prev.toml || true
+            prev=$(sed -n 's/^version = "\(.*\)"/\1/p' /tmp/prev.toml | head -n1)
+          else
+            prev=""
+          fi
+          echo "current=$cur" >> "$GITHUB_OUTPUT"
+          echo "previous=$prev" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag if version changed
+        if: steps.ver.outputs.current != '' && steps.ver.outputs.current != steps.ver.outputs.previous
+        shell: bash
+        run: |
+          v="v${{ steps.ver.outputs.current }}"
+          if git rev-parse -q --verify "refs/tags/$v" >/dev/null; then
+            echo "Tag $v already exists locally; skipping."
+            exit 0
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$v" >/dev/null 2>&1; then
+            echo "Tag $v already exists on remote; skipping."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$v" -m "Release $v"
+          git push origin "$v"
+
+  publish:
+    needs: tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-python: true
+          python-version: '3.12'
+
+      - name: Install Python
+        run: uv python install 3.12
+
+      - name: Build sdist + wheel
+        run: uv build
+
+      - name: Read package version
+        id: ver
+        run: |
+          python - <<'PY' > version.txt
+          import tomllib
+          with open('pyproject.toml','rb') as f:
+              data = tomllib.load(f)
+          print(data['project']['version'])
+          PY
+          echo "version=$(cat version.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Check if version exists on PyPI
+        id: check
+        run: |
+          v=${{ steps.ver.outputs.version }}
+          code=$(curl -s -o /dev/null -w '%{http_code}' https://pypi.org/pypi/genrepo/$v/json)
+          if [ "$code" = "200" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Version $v already on PyPI; skipping publish."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to PyPI
+        if: steps.check.outputs.skip != 'true'
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.UV_PUBLISH_TOKEN }}
+        run: uv publish --token "$UV_PUBLISH_TOKEN"
